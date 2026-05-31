@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script>
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (typeof listener === 'function') {
+                const wrappedListener = function(...args) {
+                    try {
+                        return listener.apply(this, args);
+                    } catch (e) {
+                        alert("ERROR DETECTADO EN EVENTO '" + type + "':\n" + e.message + "\n\n" + e.stack);
+                        throw e;
+                    }
+                };
+                return originalAddEventListener.call(this, type, wrappedListener, options);
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            let detail = error ? (error.stack || error.message) : "No details";
+            alert("Error: " + msg + "\nLínea: " + lineNo + "\nDetalles:\n" + detail);
+            return false;
+        };
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlexiMath - Laboratorio Espacial</title>
+    <meta name="description" content="FlexiMath es un laboratorio virtual para dominar equivalencias matemáticas.">
+    <link rel="stylesheet" href="css/styles.css?v=13">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Outfit:wght@300;500;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="math-floating-bg">
+        <div class="symbol s1">½</div>
+        <div class="symbol s2">75%</div>
+        <div class="symbol s3">0.25</div>
+        <div class="symbol s4">¾</div>
+        <div class="symbol s5">=</div>
+    </div>
+
+    <header class="app-header">
+        <h1>FlexiMath</h1>
+        <p class="subtitle" id="header-subtitle">Laboratorio Ciber-Matemático</p>
+    </header>
+
+    <nav class="app-nav" id="main-nav" style="display: none;" aria-label="Navegación principal">
+        <button class="nav-btn active" data-view="mapa">
+            <span class="icon">🗺️</span> Mapa Estelar
+        </button>
+        <button class="nav-btn" data-view="perfil">
+            <span class="icon">🏆</span> Vitrina de Logros
+        </button>
+        <div class="nav-spacer"></div>
+        <button class="nav-btn btn-logout" id="btn-logout" title="Cerrar sesión">
+            <span class="icon">🚪</span> Salir
+        </button>
+    </nav>
+
+    <main class="app-content">
+        <!-- VISTA: REGISTRO -->
+        <section id="view-registro" class="view-section active">
+            <h2>Ingreso al Laboratorio</h2>
+            <div class="form-container">
+                <div class="input-group">
+                    <label for="input-name">Nombre del Piloto:</label>
+                    <input type="text" id="input-name" placeholder="Ej. Ana, Carlos..." maxlength="15" autocomplete="off" />
+                </div>
+                
+                <div class="input-group">
+                    <label>Selecciona tu Avatar:</label>
+                    <div class="avatar-selection" id="avatar-container"></div>
+                </div>
+
+                <button id="btn-start" class="btn-primary" disabled>Iniciar Sistema</button>
+            </div>
+        </section>
+
+        <!-- VISTA: MAPA DE NIVELES -->
+        <section id="view-mapa" class="view-section" style="display: none;">
+            <h2>Mapa Estelar de Equivalencias</h2>
+            <p class="section-desc">Desbloquea sectores ganando mínimo 10 puntos de energía.</p>
+            
+            <div class="level-map" id="level-map-container">
+                <!-- Se poblará dinámicamente en JS -->
+            </div>
+        </section>
+
+        <!-- VISTA: PERFIL / VITRINA -->
+        <section id="view-perfil" class="view-section" style="display: none;">
+            <div class="profile-header">
+                <div class="profile-avatar" id="display-avatar">🌟</div>
+                <div class="profile-info">
+                    <h2 id="display-name">Nombre</h2>
+                    <p class="stars-count"><span class="icon">⭐</span> <span id="display-stars">0</span> Puntos de Energía Global</p>
+                </div>
+            </div>
+            
+            <div class="badges-section">
+                <h3>Insignias Desbloqueadas</h3>
+                <div class="badges-container">
+                    <div class="badge-empty">
+                        <p>Completa sectores para ganar insignias.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA: ACTIVIDAD (Nivel de Juego) -->
+        <section id="view-actividad" class="view-section full-width" style="display: none;">
+            <div class="activity-header">
+                <button class="btn-back" id="btn-back-map">⬅️ Abortar</button>
+                <div class="activity-meta">
+                    <h2 id="activity-title">Sector X</h2>
+                    <p id="activity-progress">Simulación: 1 / 5</p>
+                </div>
+                <div class="activity-score">
+                    <div class="current-try" id="current-stars">Energía Intento: ⭐⭐⭐</div>
+                    <div class="total-score" id="total-level-stars">Acumulado: 0/15 ⭐</div>
+                    <div id="survival-timer" style="display: none; color: var(--accent-color); font-weight: bold; font-size: 1.2rem;">⏳ 60s</div>
+                </div>
+            </div>
+            
+            <!-- Panel del Comandante (Tutorial) -->
+            <div id="commander-panel" class="commander-panel" style="display: none;">
+                <div class="commander-avatar">👨‍🚀</div>
+                <div class="commander-message">
+                    <h4>Comandante:</h4>
+                    <p id="commander-text">Mensaje de prueba</p>
+                </div>
+            </div>
+
+            <!-- Selector de Herramientas -->
+            <div class="tools-switcher">
+                <button class="tool-btn active" data-tool="balanza">
+                    <span class="icon">⚖️</span> Balanza Cuántica
+                </button>
+                <button class="tool-btn" data-tool="recipientes">
+                    <span class="icon">🫙</span> Recipientes de Plasma
+                </button>
+            </div>
+
+            <!-- Contenedor de Herramientas -->
+            <div class="tool-container">
+                
+                <!-- BALANZA CUÁNTICA -->
+                <div id="tool-balanza" class="tool-view active">
+                    
+                    <div class="balance-system">
+                        <!-- Balanza Física -->
+                        <div class="balance-structure">
+                            <div class="balance-arm" id="balance-arm">
+                                <!-- Platillo Izquierdo (Problema) -->
+                                <div class="plate-container left">
+                                    <div class="rope"></div>
+                                    <div class="plate plate-left" id="plate-target">
+                                        <!-- Piezas del problema generadas por JS -->
+                                    </div>
+                                </div>
+                                
+                                <!-- Platillo Derecho (Solución / Dropzone) -->
+                                <div class="plate-container right">
+                                    <div class="rope"></div>
+                                    <div class="plate plate-right dropzone" id="plate-solution">
+                                        <!-- El usuario suelta piezas aquí -->
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Base de la balanza -->
+                            <div class="balance-base"></div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="tool-recipientes" class="tool-view" style="display: none;">
+                    <div class="beakers-system">
+                        <div class="beaker-wrapper">
+                            <h3 class="beaker-label">Problema</h3>
+                            <div class="beaker" id="beaker-target">
+                                <div class="merged-liquid" id="target-liquid"></div>
+                            </div>
+                        </div>
+                        <div class="beaker-wrapper">
+                            <h3 class="beaker-label">Tu Plasma</h3>
+                            <div class="beaker dropzone" id="beaker-solution">
+                                <div class="merged-liquid" id="solution-liquid"></div>
+                            </div>
+                            <button id="btn-empty-beaker" class="btn-secondary" style="margin-top: 10px; border-color: #FCA5A5; color: #FCA5A5;">🗑️ Vaciar</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Inventario de piezas Drag & Drop (AHORA GLOBAL) -->
+            <div class="pieces-inventory" id="pieces-inventory">
+                <!-- Generado dinámicamente -->
+            </div>
+            
+            <div class="activity-controls">
+                <button class="btn-primary" id="btn-submit-answer">Verificar Ecuación</button>
+                <button class="btn-secondary" id="btn-next-exercise" style="display: none;">Siguiente Simulación ➡️</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL DE DIAGNÓSTICO (Feedback) -->
+    <div id="feedback-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content feedback-error">
+            <h2>⚠️ Reporte de Calibración</h2>
+            <p id="feedback-message">Hubo un error en la mezcla.</p>
+            <button id="btn-close-feedback" class="btn-primary">Entendido, recalibrar</button>
+        </div>
+    </div>
+
+    <!-- Contenedor para Notificaciones de Logros -->
+    <div id="achievement-toast" class="achievement-toast">
+        <div class="toast-icon" id="toast-icon">🏆</div>
+        <div class="toast-content">
+            <h4 class="toast-title">¡Logro Desbloqueado!</h4>
+            <p class="toast-desc" id="toast-desc">Nombre del Logro</p>
+        </div>
+    </div>
+
+    <!-- Scripts locales (Secuenciales) con Cache Busting absoluto por nombre de archivo -->
+    <script src="js/audio.v11.js?v=13"></script>
+    <script src="js/state.v11.js?v=13"></script>
+    <script src="js/profile.v11.js?v=13"></script>
+    <script src="js/balanza.v11.js?v=13"></script>
+    <script src="js/recipientes.v11.js?v=13"></script>
+    <script src="js/engine.v11.js?v=13"></script>
+    <script src="js/app.v11.js?v=13"></script>
+</body>
+</html>
