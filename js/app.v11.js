@@ -158,12 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
         levelMapContainer.querySelectorAll('.btn-play').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const levelId = parseInt(btn.dataset.level);
+                const lvlData = levelsData.find(l => l.id === levelId);
+                const title = lvlData ? lvlData.title : 'Sector ' + levelId;
+                
                 mainNav.style.display = 'none';
                 showView('view-actividad');
                 switchTool('balanza');
                 
                 // INICIAR MOTOR
-                window.GameEngine.startLevel(levelId);
+                window.GameEngine.startLevel(levelId, title);
             });
         });
     }

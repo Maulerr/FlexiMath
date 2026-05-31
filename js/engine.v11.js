@@ -152,12 +152,16 @@ window.GameEngine = {
         return array;
     },
 
-    startLevel(level) {
+    startLevel(level, title = 'Sector X') {
         this.currentLevel = level;
         this.currentSublevel = 0; // Ajustado para usar array index
         this.totalLevelStars = 0;
         this.isSurvival = (level === 4);
         
+        if (this.activityTitle) {
+            this.activityTitle.textContent = title;
+        }
+
         if (this.isSurvival) {
             this.timeLeft = 60;
             this.totalSublevels = '∞';
@@ -182,6 +186,7 @@ window.GameEngine = {
         
         this.init();
         this.renderExercise();
+        this.updateUI(); // Forzar actualización inicial de la UI
     },
 
     renderExercise() {
@@ -231,8 +236,7 @@ window.GameEngine = {
             commanderPanel.style.display = 'none';
         }
         
-        // Renderizar intento actual (estrellas disponibles)
-        this.currentStarsEl.innerHTML = `Energía Intento: ${'⭐'.repeat(this.starsInCurrent)}`;
+        this.updateUI(); // Actualizar UI con el nuevo subnivel
     },
 
     updateUI() {
@@ -302,6 +306,7 @@ window.GameEngine = {
                 setTimeout(() => this.nextSublevel(), 1000); // Auto avanzar
             } else {
                 this.totalLevelStars += this.starsInCurrent;
+                this.updateUI(); // Mostrar estrellas acumuladas inmediatamente
                 this.btnSubmit.style.display = 'none';
                 this.btnNext.style.display = 'block';
             }
@@ -313,7 +318,9 @@ window.GameEngine = {
             
             if (this.currentLevel !== 0) {
                 this.starsInCurrent--;
+                if(this.starsInCurrent < 0) this.starsInCurrent = 0;
             }
+            this.updateUI(); // Actualizar estrellas perdidas
             
             // Calcular diferencia y mostrar modal
             let diff = Math.abs(targetWeight - solutionWeight);
